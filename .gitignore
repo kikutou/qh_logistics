@@ -1,0 +1,10 @@
+# すべての.pycファイルを無視する
+*.pyc
+
+# 配置ファイル（configure.py）にDBのパスワードが記載されているので、イグノアする/configure.py
+
+# アップロードされた画像ファイルをイグノアする
+/static/item_img/
+
+# pycharmの配置ファイルを全部イグノアする
+/.idea/

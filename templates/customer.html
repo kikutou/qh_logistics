@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block body %}
+
+
+
+        <p><a class="btn" href="/customerAdd" role="button">顾客追加</a></p>
+        <table class="split total" style="word-break:break-all;">
+                <tr>
+                    <th>顾客显示名</th>
+                    <th>顾客真名</th>
+                    <th>顾客电话1</th>
+                    <th>电子邮件</th>
+                    <th>顾客地址</th>
+                    <th>编辑</th>
+                    <th>删除</th>
+                </tr>
+
+                {%for key,record in customersData.items() %}
+                <tr>
+                    <td>{{record['name']}}</td>
+                    <td>{{record['real_name']}}</td>
+                    <td>{{record['telephone1']}}</td>
+                    <td>{{record['email']}}</td>
+                    <td>{{record['address']}}</td>
+                    <td><a class="btnt" onclick=location.href="/customerEdit?id={{record['id']}}"; >编辑</a></td>
+                    <td><a class="btnt" onclick=location.href="/customerDelete?id={{record['id']}}"; >删除</a></td>
+                </tr>
+                {%endfor%}
+
+        </table>
+
+{% endblock %}

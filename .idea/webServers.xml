@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="9d59c13c-e4ca-4a4f-b56f-4d27fee78b9a" name="logistics_server" url="http://54.238.131.61">
+        <fileTransfer host="54.238.131.61" port="22" privateKey="$PROJECT_DIR$/../QhLogistics.pem" rootFolder="/home/ec2-user/myproject" accessType="SFTP" username="ec2-user" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
