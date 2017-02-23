@@ -14,7 +14,6 @@ import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
-
 #model add
 from InboxModel import Inbox
 from OutboxModel import Outbox
@@ -81,7 +80,9 @@ def showLogin():
 
         email = request.form['inputEmail']
         password = request.form['inputPassword']
+
         me = User(email)
+
         if me.check_password(password) and me.staff_name is not None:
             session['staff_name'] = me.staff_name
             session['staff_id'] = me.staff_id
@@ -915,7 +916,7 @@ def itemEdit():
     else:
         item_num = 0
     madeInInfos = MadeInInfo(app).getMadeInInfos(None)
-    print(item)
+    # print(item)
     return render_template('itemEdit.html', title=unicode("商品编辑", 'utf-8'), item=item,
                            item_num=item_num, outbox=outbox,  source=source,
                            madeInInfos=madeInInfos, error=error)
@@ -1650,4 +1651,4 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000, threaded = True)
+    app.run(host='0.0.0.0', port=8000, threaded = True, debug = True)
