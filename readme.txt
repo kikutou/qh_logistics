@@ -18,8 +18,12 @@ MYSQL_DATABASE_DB = 'DB名'
 MYSQL_DATABASE_HOST = 'ホストIPまたはホスト名'
 
 4.ログインページについて
-url/showLogin
+url/show_login
 
 5.pycharmのインポートエラー表示について
 pathになるフォルダをpycharmのProject表示欄に右クリックして、
 選択肢の「Mark Directory as」の「Sources root」を選択する。
+
+6.debugモード切り替え
+デバッグモード：logistics/app.pyのapp.config['DEBUG']をTrueに設定する
+実行モード：logistics/app.pyのapp.config['DEBUG']をFalseに設定する

@@ -1,20 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys, os
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/model')
-
-from flask import Flask, flash, render_template, request, json, redirect, session, url_for
-from flaskext.mysql import MySQL
-from werkzeug import secure_filename
-import datetime
-import urllib
-from bs4 import BeautifulSoup
-import re
-
-import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
-
-#model add
+from flask import Flask, flash, render_template, request, redirect, session
+from werkzeug.utils import secure_filename
 from InboxModel import Inbox
 from OutboxModel import Outbox
 from ItemModel import Item
@@ -24,15 +10,22 @@ from MadeInInfoModel import MadeInInfo
 from RelInItemModel import RelInItem
 from RelOutItemModel import RelOutItem
 from StaffModel import Staff
-import logging
-from logging.handlers import RotatingFileHandler
+from bs4 import BeautifulSoup
+import os
+import datetime
+import urllib
+import sys
 
+reload(sys)
+sys.setdefaultencoding("utf-8")
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/model')
 
 UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))+'/static/img'
 ITEM_UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))+'/static/item_img'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 app = Flask(__name__)
-#app.config['DEBUG'] = True
+app.config['DEBUG'] = True
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['ITEM_UPLOAD_FOLDER'] = ITEM_UPLOAD_FOLDER
 app.secret_key = 'super secret key'
@@ -40,31 +33,39 @@ app.secret_key = 'super secret key'
 
 @app.before_request
 def before_request():
-    # session check
+    """
+    ログインセッションチェック
+    :return:
+        ログインしていなければ、ログインパスにリディレクトさせる。
+    """
     if session.get('staff_name') is not None:
         return
-    elif request.path == '/showLogin':
+    elif request.path == '/show_login':
         return
     elif request.path == '/logout':
         return
-    # ログインされておらずログインページに関するリクエストでもなければリダイレクトする
     else:
+        # ログインされておらずログインページに関するリクエストでもなければリダイレクトする
         if request.endpoint not in ('login', 'static'):
-            return redirect('/showLogin')
+            return redirect('/show_login')
+
 
 @app.route("/")
 def first():
     return redirect("/main")
 
+
 @app.route("/main")
 def main():
     return render_template('index.html')
+
 
 @app.route("/home")
 def home():
     return render_template("home.html", title="home")
 
-@app.route('/logout', methods=['GET', 'POST'])
+
+@app.route('/logout', methods=['GET'])
 def logout():
 
     session.pop('staff_name', None)
@@ -74,8 +75,8 @@ def logout():
     return redirect('/main')
 
 
-@app.route('/showLogin', methods=['GET', 'POST'])
-def showLogin():
+@app.route('/show_login', methods=['GET', 'POST'])
+def show_login():
     if request.method == 'POST':
 
         email = request.form['inputEmail']
@@ -94,12 +95,13 @@ def showLogin():
     else:
         return render_template('login.html')
 
+
 @app.route('/inboxCustomerSelect')
 def inboxCustomerSelect():
 
     customers = Customer(app).getCustomers()
 
-    return render_template('inboxCustomerSelect.html', title = unicode("入库箱信息-顾客选择", 'utf-8'), data=customers)
+    return render_template('inboxCustomerSelect.html', title=unicode("入库箱信息-顾客选择", 'utf-8'), data=customers)
 
 
 @app.route('/inboxIndex')
@@ -112,7 +114,7 @@ def inboxIndex():
 
     inboxData = {key:record for key,record in inboxData.iteritems() if record['status'] == 0 or record['status'] == 1}
 
-    return render_template('inboxIndex.html', title = unicode("入库箱信息", 'utf-8'), customer=customer, inboxData=inboxData)
+    return render_template('inboxIndex.html', title=unicode("入库箱信息", 'utf-8'), customer=customer, inboxData=inboxData)
 
 
 @app.route('/inboxAdd', methods=['GET', 'POST'])
@@ -129,16 +131,17 @@ def inboxAdd():
         width = request.form['width']
         height = request.form['height']
         weight = request.form['weight']
-        data = {'name' : name,
-                 'memo' : memo,
-                 'length' : length,
-                 'width' : width,
-                 'height' : height,
-                 'weight' : weight,
-                'customer_id': customer_id,
-                'staff_id': staff_id,
-                'status': 0
-             }
+        data = {
+            'name': name,
+            'memo': memo,
+            'length': length,
+            'width': width,
+            'height': height,
+            'weight': weight,
+            'customer_id': customer_id,
+            'staff_id': staff_id,
+            'status': 0
+        }
 
         result = Inbox(app).addInbox(data)
         if result:
@@ -149,7 +152,9 @@ def inboxAdd():
     else:
 
         customerId = request.args.get('customerId')
-        return render_template('inboxAdd.html', title=unicode('入库箱追加', 'utf-8'), customerId = customerId, error= error)
+
+    return render_template('inboxAdd.html', title=unicode('入库箱追加', 'utf-8'), customerId = customerId, error= error)
+
 
 @app.route('/inboxEdit', methods=['GET', 'POST'])
 def inboxEdit():
@@ -194,6 +199,7 @@ def inboxEdit():
 
     return render_template('inboxAdd.html', title=unicode('入库箱追加', 'utf-8'), customerId = inboxData['customer_id'], inboxId = inboxId, inbox = inboxData, error= error)
 
+
 @app.route('/inboxDelete', methods=['GET', 'POST'])
 def inboxDelete():
 
@@ -220,8 +226,6 @@ def inboxDelete():
         customerId = request.args.get('customer_id')
 
     return render_template('inboxDelete.html', title = unicode("确定删除", 'utf-8'), id = id,customer_id = customerId, error = error)
-
-
 
 
 @app.route('/outboxCustomerSelect')
@@ -262,8 +266,6 @@ def outboxInboxSelectConfirm():
             return redirect("outboxIndex?id=" + inboxId+'&customer_id=' + customerId)
         else:
             error = '入库箱选择失败'
-
-
     else:
 
         inboxId = request.args.get('id')
@@ -277,6 +279,7 @@ def outboxInboxSelectConfirm():
         return redirect("outboxIndex?customer_id=" + customerId)
 
     return render_template('outboxInboxSelectConfirm.html', title = unicode("入库箱选择确认", 'utf-8'), customer=customer, inboxData=inboxData)
+
 
 @app.route('/outboxIndex')
 def outboxIndex():
@@ -292,6 +295,7 @@ def outboxIndex():
 
     return render_template('outboxIndex.html', title = unicode("出库箱信息", 'utf-8'), customer=customer, inboxArray=inboxArray,outboxData = outboxData)
 
+
 @app.route('/outboxAdd', methods=['GET', 'POST'])
 def outboxAdd():
     error = None
@@ -306,18 +310,19 @@ def outboxAdd():
         height = request.form['height']
         weight = request.form['weight']
 
-        data = {'name' : name,
-                 'memo' : memo,
-                 'length' : length,
-                 'width' : width,
-                 'height' : height,
-                 'weight' : weight,
-                'customer_id': customer_id,
-                'staff_id': staff_id,
-                'status': 0,
-                'update_at':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'update_by': staff_id
-                 }
+        data = {
+            'name': name,
+            'memo': memo,
+            'length': length,
+            'width': width,
+            'height': height,
+            'weight': weight,
+            'customer_id': customer_id,
+            'staff_id': staff_id,
+            'status': 0,
+            'update_at':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'update_by': staff_id
+        }
 
         result = Outbox(app).addOutbox(data)
         if result:
@@ -337,8 +342,6 @@ def outboxEdit():
     error = None
     if request.method == 'POST':
 
-
-
         outboxId = request.form['id']
 
         customer_id = request.form['customer_id']
@@ -349,16 +352,17 @@ def outboxEdit():
         width = request.form['width']
         height = request.form['height']
         weight = request.form['weight']
-        data = {'name' : name,
-                 'memo' : memo,
-                 'length' : length,
-                 'width' : width,
-                 'height' : height,
-                 'weight' : weight,
-                'customer_id': customer_id,
-                'staff_id': staff_id,
-                'status': 0
-                 }
+        data = {
+            'name': name,
+            'memo': memo,
+            'length': length,
+            'width': width,
+            'height': height,
+            'weight' : weight,
+            'customer_id': customer_id,
+            'staff_id': staff_id,
+            'status': 0
+        }
 
         result = Outbox(app).saveOutboxData(int(outboxId), data)
 
@@ -382,6 +386,7 @@ def customer():
     customers = Customer(app).getCustomers()
 
     return render_template('customer.html', title = unicode("顾客信息", 'utf-8'),customersData = customers)
+
 
 @app.route('/customerAdd', methods=['GET', 'POST'])
 def customerAdd():
@@ -450,8 +455,8 @@ def customerAdd():
         else:
             error = unicode('顾客添加失败', 'utf-8')
 
+    return render_template('customerAdd.html', title=unicode("顾客信息", 'utf-8'), error=error)
 
-    return render_template('customerAdd.html', title = unicode("顾客信息", 'utf-8'), error = error)
 
 @app.route('/customerEdit', methods=['GET', 'POST'])
 def customerEdit():
@@ -471,11 +476,10 @@ def customerEdit():
         company_name = request.form['company_name']
         company_address = request.form['company_address']
         company_telephone = request.form['company_telephone']
-        try:
-            if request.form['id_confirmed_flag']:
-                id_confirmed_flag = 1
 
-        except:
+        if request.form['id_confirmed_flag']:
+            id_confirmed_flag = 1
+        else:
             id_confirmed_flag = 0
 
         id_card_no = request.form['id_card_no']
@@ -510,7 +514,6 @@ def customerEdit():
             save_file_name = now_time + '_id_card_pic_back_' + filename
             data['id_card_pic_back'] = "/static/img/" + save_file_name
             id_card_pic_back.save(os.path.join(app.config['UPLOAD_FOLDER'], save_file_name))
-
 
         result = Customer(app).updateCustomer(data,int(id))
 
@@ -578,8 +581,8 @@ def itemAdd():
             あれば、数目を更新する
             なければ、追加
         '''
-        #①DBに商品情報を書き込む
-        #janコードを取得する。
+        # ①DBに商品情報を書き込む
+        # janコードを取得する。
 
         try:
             jancode = request.form['jan_code']
@@ -609,8 +612,7 @@ def itemAdd():
         except:
             error = unicode('出库箱未选择', 'utf-8')
 
-
-        #DBから商品情報を試して取得する。
+        # DBから商品情報を試して取得する。
         if not error:
 
             item = Item(app).getItem({'jan_code': jancode})
@@ -624,7 +626,7 @@ def itemAdd():
                     'country_of_origin': request.form['country_of_origin']
                 }
 
-            #商品のimageを取得する
+            # 商品のimageを取得する
             image_pic = request.files['item_image_pic']
 
             if image_pic and allowed_file(image_pic.filename):
@@ -634,7 +636,7 @@ def itemAdd():
 
                 save_file_name = now_time + '_item_image_pic_' + filename
                 data['item_image_pic'] = "/static/item_img/" + save_file_name
-                #imageの保存
+                # imageの保存
                 image_pic.save(os.path.join(app.config['ITEM_UPLOAD_FOLDER'], save_file_name))
             elif img_url != "":
                 data['item_image_pic'] = img_url
@@ -642,13 +644,11 @@ def itemAdd():
             if item:
 
                 itemId = int(item['id'])
-
-                #あれば、更新
+                # あれば、更新
                 result = Item(app).saveItem(itemId, data)
 
             else:
-                #なければ、追加
-
+                # なければ、追加
                 if jancode == "":
                     jancode = Item(app).getLastJancode()
                     data['jan_code'] = jancode
@@ -660,14 +660,10 @@ def itemAdd():
                 if not result:
                     error = unicode('商品添加失败', 'utf-8')
 
-
-            #②DBに商品と入庫箱の関係テーブルを書き込む
-
-            #DBから商品情報を試して取得する。
+            # ②DBに商品と入庫箱の関係テーブルを書き込む
+            # DBから商品情報を試して取得する。
             item = Item(app).getItem({'jan_code': jancode})
             itemId = item['id']
-
-
 
             checkTime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -699,8 +695,7 @@ def itemAdd():
                 if not result:
                     error = unicode('商品添加失败', 'utf-8')
 
-
-            #②DBに商品と出庫箱の関係テーブルを書き込む
+            # ②DBに商品と出庫箱の関係テーブルを書き込む
             outboxId = request.form['outbox']
 
             relOutItem = RelOutItem(app).getRelOutItem({'out_box_id': outboxId,'item_id':itemId})
@@ -758,14 +753,14 @@ def itemAdd():
         '''
         error = request.args.get('error')
 
-        #janコードを取得する。
+        # janコードを取得する。
         jancode = str(request.args.get('jancode'))
 
-        #DBから商品情報を試して取得する。
+        # DBから商品情報を試して取得する。
         item = Item(app).getItem({'jan_code': jancode})
 
         if (item == 0):
-            #取得できなければ、ウェブサイトから、商品情報を取得する。
+            # 取得できなければ、ウェブサイトから、商品情報を取得する。
             try:
                 html = urllib.urlopen('http://www.janken.jp/goods/jk_catalog_syosai.php?jan=' + jancode)
                 soup = BeautifulSoup(html.read(), "html.parser")
@@ -791,14 +786,14 @@ def itemAdd():
                 error = "找不到该商品信息"
 
         if (item == 0 or (item and ( item['jp_name'] == None or item['unit_price'] == None ))):
-            #取得できなければ、ウェブサイトから、商品情報を取得する。
+            # 取得できなければ、ウェブサイトから、商品情報を取得する。
             try:
                 html = urllib.urlopen('http://kakaku.com/search_results/' + jancode + '/')
                 soup = BeautifulSoup(html.read(), "html.parser")
 
                 itemTable = soup.find('div','item01')
 
-                #商品の写真
+                # 商品の写真
                 itemPicUrl = itemTable.find('div','itemBg').find('div','itemphoto').find('a','blankLink').find('img')['data-original']
 
                 # 商品の日本語名前
@@ -834,8 +829,8 @@ def itemAdd():
     if not outboxes:
         error = unicode('没有出库箱', 'utf-8')
 
-    return render_template('itemAdd.html', title = unicode("商品添加", 'utf-8'),item = item, madeInInfos = madeInInfos,
-                           inboxes = inboxes, outboxes = outboxes ,error = error)
+    return render_template('itemAdd.html', title=unicode("商品添加", 'utf-8'), item=item, madeInInfos=madeInInfos,
+                           inboxes=inboxes, outboxes=outboxes ,error=error)
 
 
 @app.route('/itemAddSuccess', methods=['GET', 'POST'])
@@ -854,7 +849,6 @@ def itemAddSuccess():
             Outbox(app).saveOutboxData(int(outboxId),{'status': 1})
         else:
             error = '未知错误'
-
 
     inboxes = Inbox(app).getInboxDatas({'status': 1, 'staff_id': session.get('staff_id')})
 
@@ -876,6 +870,7 @@ def itemAddSuccess():
 
     return render_template('itemAddSuccess.html', title = unicode("货物添加成功", 'utf-8'), error = error, inboxes = inboxes,
                            customer = customer, outboxes = outboxes)
+
 
 @app.route('/itemEdit', methods=['GET', 'POST'])
 def itemEdit():
@@ -997,24 +992,24 @@ def removeItem():
             なければ、新規追加
 
         '''
-        #①移動する数目をチェックする
+        # ①移動する数目をチェックする
         relOutItem = RelOutItem(app).getRelOutItem({'out_box_id': srcOutbox, 'item_id': itemId})
         oldNum = relOutItem['item_num']
         if int(num) > int(oldNum):
             error = '移动数目不正确，请重新输入'
 
         if not error:
-            #②元のoutboxから、数目を更新
+            # ②元のoutboxから、数目を更新
             if int(num) == int(oldNum):
                 RelOutItem(app).saveRelOutItem(int(relOutItem['id']),{'delete_flag': 1})
             else:
                 leftNum = int(oldNum) - int(num)
                 RelOutItem(app).saveRelOutItem(int(relOutItem['id']),{'item_num': leftNum})
 
-            #移動先のoutboxの数目を更新
+            # 移動先のoutboxの数目を更新
             desRelOutItem = RelOutItem(app).getRelOutItem({'out_box_id': desOutbox, 'item_id': itemId})
             if desRelOutItem:
-                #すでにある場合、数目を増加して、更新する
+                # すでにある場合、数目を増加して、更新する
                 newNum = int(desRelOutItem['item_num']) + int(num)
                 RelOutItem(app).saveRelOutItem(int(desRelOutItem['id']),{'item_num': newNum})
             else:
@@ -1041,9 +1036,8 @@ def removeItem():
 
     outboxes = Outbox(app).getOutboxDatas({'status': 0, 'staff_id': session.get('staff_id'), 'customer_id': customerId})
 
-
-    return render_template('removeItem.html', title = unicode("出库箱详细", 'utf-8'), error = error, outbox = outbox,
-                           customer = customer, item = item, relOutItem = relOutItem, outboxes = outboxes)
+    return render_template('removeItem.html', title=unicode("出库箱详细", 'utf-8'), error=error, outbox=outbox,
+                           customer=customer, item=item, relOutItem=relOutItem, outboxes=outboxes)
 
 
 @app.route('/adminInbox', methods=['GET', 'POST'])
@@ -1145,8 +1139,9 @@ def adminInboxEdit():
     customers = Customer(app).getCustomers()
     staffs = Staff(app).getStaffs()
 
-    return render_template('adminInboxEdit.html', title=unicode('入库箱追加', 'utf-8'), customers = customers,
-                           staffs = staffs, inbox = inboxData, error= error)
+    return render_template('adminInboxEdit.html', title=unicode('入库箱追加', 'utf-8'), customers=customers,
+                           staffs=staffs, inbox=inboxData, error=error)
+
 
 @app.route('/adminInboxAdd', methods=['GET', 'POST'])
 def adminInboxAdd():
@@ -1163,15 +1158,16 @@ def adminInboxAdd():
         height = request.form['height']
         weight = request.form['weight']
         status = request.form['status']
-        data = {'name' : name,
-                 'memo' : memo,
-                 'length' : length,
-                 'width' : width,
-                 'height' : height,
-                 'weight' : weight,
-                'customer_id': customer_id,
-                'staff_id': staff_id,
-                'status': status
+        data = {
+            'name': name,
+            'memo': memo,
+            'length': length,
+            'width': width,
+            'height': height,
+            'weight': weight,
+            'customer_id': customer_id,
+            'staff_id': staff_id,
+            'status': status
         }
 
         result = Inbox(app).addInbox(data)
@@ -1184,8 +1180,9 @@ def adminInboxAdd():
     customers = Customer(app).getCustomers()
     staffs = Staff(app).getStaffs()
 
-    return render_template('adminInboxAdd.html', title=unicode('入库箱追加', 'utf-8'), customers = customers,
-                           staffs = staffs, error= error)
+    return render_template('adminInboxAdd.html', title=unicode('入库箱追加', 'utf-8'), customers=customers,
+                           staffs=staffs, error=error)
+
 
 @app.route('/adminInboxDelete', methods=['GET', 'POST'])
 def adminInboxDelete():
@@ -1276,8 +1273,10 @@ def adminOutbox():
 
         newOutboxData[key] = record
 
-    return render_template('adminOutboxList.html', title = unicode("出库箱管理", 'utf-8'), error = error,
-                           outboxData = newOutboxData, date_from = date_from[:10], date_to = date_to[:10], name = name, status = status)
+    return render_template('adminOutboxList.html', title=unicode("出库箱管理", 'utf-8'), error=error,
+                           outboxData=newOutboxData, date_from=date_from[:10],
+                           date_to=date_to[:10], name=name, status=status)
+
 
 @app.route('/adminOutboxEdit', methods=['GET', 'POST'])
 def adminOutboxEdit():
@@ -1332,8 +1331,9 @@ def adminOutboxEdit():
     customers = Customer(app).getCustomers()
     staffs = Staff(app).getStaffs()
 
-    return render_template('adminOutboxEdit.html', title=unicode('出库箱追加', 'utf-8'), customers = customers,
-                           staffs = staffs, outbox = outboxData, action=action, error= error)
+    return render_template('adminOutboxEdit.html', title=unicode('出库箱追加', 'utf-8'), customers=customers,
+                           staffs=staffs, outbox=outboxData, action=action, error=error)
+
 
 @app.route('/adminOutboxAdd', methods=['GET', 'POST'])
 def adminOutboxAdd():
@@ -1350,15 +1350,16 @@ def adminOutboxAdd():
         height = request.form['height']
         weight = request.form['weight']
         status = request.form['status']
-        data = {'name' : name,
-                 'memo' : memo,
-                 'length' : length,
-                 'width' : width,
-                 'height' : height,
-                 'weight' : weight,
-                'customer_id': customer_id,
-                'staff_id': staff_id,
-                'status': status
+        data = {
+            'name': name,
+            'memo': memo,
+            'length': length,
+            'width': width,
+            'height': height,
+            'weight': weight,
+            'customer_id': customer_id,
+            'staff_id': staff_id,
+            'status': status
         }
 
         result = Outbox(app).addOutbox(data)
@@ -1371,8 +1372,9 @@ def adminOutboxAdd():
     customers = Customer(app).getCustomers()
     staffs = Staff(app).getStaffs()
 
-    return render_template('adminOutboxAdd.html', title=unicode('出库箱追加', 'utf-8'), customers = customers,
-                           staffs = staffs, error= error)
+    return render_template('adminOutboxAdd.html', title=unicode('出库箱追加', 'utf-8'), customers=customers,
+                           staffs=staffs, error=error)
+
 
 @app.route('/adminOutboxDelete', methods=['GET', 'POST'])
 def adminOutboxDelete():
@@ -1398,6 +1400,7 @@ def adminOutboxDelete():
         id = request.args.get('id')
 
     return render_template('adminOutboxDelete.html', title = unicode("确定删除", 'utf-8'), id = id, error = error)
+
 
 @app.route('/adminCustomer', methods=['GET', 'POST'])
 def adminCustomer():
@@ -1428,16 +1431,17 @@ def adminCustomerAdd():
         company_name = request.form['company_name']
         company_address = request.form['company_address']
         company_telephone = request.form['company_telephone']
-        data = {'name' : name,
-                 'real_name' : real_name,
-                 'address' : address,
-                 'telephone1' : telephone1,
-                 'telephone2' : telephone2,
-                 'email' : email,
-                'id_card_no': id_card_no,
-                'company_name': company_name,
-                'company_address': company_address,
-                'company_telephone': company_telephone
+        data = {
+            'name': name,
+            'real_name': real_name,
+            'address': address,
+            'telephone1': telephone1,
+            'telephone2': telephone2,
+            'email': email,
+            'id_card_no': id_card_no,
+            'company_name': company_name,
+            'company_address': company_address,
+            'company_telephone': company_telephone
         }
 
         result = Customer(app).insertCustomer(data)
@@ -1450,8 +1454,9 @@ def adminCustomerAdd():
     customers = Customer(app).getCustomers()
     staffs = Staff(app).getStaffs()
 
-    return render_template('adminCustomerAdd.html', title=unicode('顾客信息追加', 'utf-8'), customers = customers,
-                           staffs = staffs, error= error)
+    return render_template('adminCustomerAdd.html', title=unicode('顾客信息追加', 'utf-8'), customers=customers,
+                           staffs=staffs, error=error)
+
 
 @app.route('/adminCustomerEdit', methods=['GET', 'POST'])
 def adminCustomerEdit():
@@ -1492,13 +1497,11 @@ def adminCustomerEdit():
     else:
 
         customer_id = request.args.get('id')
-
-
         customer = Customer(app).getCustomer(int(customer_id))
 
+    return render_template('adminCustomerEdit.html', title=unicode('顾客信息编辑', 'utf-8'), customer=customer,
+                           error=error)
 
-    return render_template('adminCustomerEdit.html', title = unicode('顾客信息编辑', 'utf-8'), customer = customer,
-                           error = error)
 
 @app.route('/adminCustomerDelete', methods=['GET', 'POST'])
 def adminCustomerDelete():
@@ -1523,19 +1526,20 @@ def adminCustomerDelete():
 
         id = request.args.get('id')
 
-    return render_template('adminCustomerDelete.html', title = unicode("确定删除", 'utf-8'), id = id, error = error)
+    return render_template('adminCustomerDelete.html', title=unicode("确定删除", 'utf-8'), id=id, error=error)
+
 
 @app.route('/adminStaff', methods=['GET', 'POST'])
 def adminStaff():
 
     error = None
 
-
     customer = Staff(app).getStaffs()
     if customer == 0:
         error = "can not found the customer datas!"
 
     return render_template('adminStaffList.html', title = unicode("职员管理", 'utf-8'), error = error, viewStaff = customer)
+
 
 @app.route('/adminStaffAdd', methods=['GET', 'POST'])
 def adminStaffAdd():
@@ -1550,15 +1554,14 @@ def adminStaffAdd():
         email = request.form['email']
         password = request.form['password']
 
-        data = {'staff_cd': staff_cd,
-                'name' : name,
-                'telphone' : telphone,
-                'email': email,
-                'password': password
-
+        data = {
+            'staff_cd': staff_cd,
+            'name': name,
+            'telphone': telphone,
+            'email': email,
+            'password': password
         }
 
-        #result = Staff(app).insertStaff(data)
         result = user.do_register(data)
         if result:
             flash('职员信息更新成功')
@@ -1569,6 +1572,7 @@ def adminStaffAdd():
     staffs = Staff(app).getStaffs()
 
     return render_template('adminStaffAdd.html', title=unicode('职员信息追加', 'utf-8'), staffs = staffs, error= error)
+
 
 @app.route('/adminStaffEdit', methods=['GET', 'POST'])
 def adminStaffEdit():
@@ -1604,12 +1608,11 @@ def adminStaffEdit():
 
         staffId = request.args.get('id')
 
-
         staff = Staff(app).getStaff(int(staffId))
 
+    return render_template('adminStaffEdit.html', title=unicode('职员信息编辑', 'utf-8'), staff=staff,
+                           error=error)
 
-    return render_template('adminStaffEdit.html', title = unicode('职员信息编辑', 'utf-8'), staff = staff,
-                           error = error)
 
 @app.route('/adminStaffDelete', methods=['GET', 'POST'])
 def adminStaffDelete():
@@ -1634,7 +1637,8 @@ def adminStaffDelete():
 
         id = request.args.get('id')
 
-    return render_template('adminStaffDelete.html', title = unicode("确定删除", 'utf-8'), id = id, error = error)
+    return render_template('adminStaffDelete.html', title=unicode("确定删除", 'utf-8'), id=id, error=error)
+
 
 @app.route("/adminHome")
 def adminHome():
@@ -1644,11 +1648,9 @@ def adminHome():
         return render_template("home.html", title="home")
 
 
-
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000, threaded = True, debug = True)
+    app.run(host='0.0.0.0', port=8000, threaded = True)
