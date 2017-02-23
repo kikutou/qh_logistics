@@ -19,3 +19,7 @@ MYSQL_DATABASE_HOST = 'ホストIPまたはホスト名'
 
 4.ログインページについて
 url/showLogin
+
+5.pycharmのインポートエラー表示について
+pathになるフォルダをpycharmのProject表示欄に右クリックして、
+選択肢の「Mark Directory as」の「Sources root」を選択する。
