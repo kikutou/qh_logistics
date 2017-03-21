@@ -2,6 +2,10 @@
 *.pyc
 
 # 配置ファイル（configure.py）にDBのパスワードが記載されているので、イグノアする/configure.py
+configure.py
+
+#デバッグファイルを無視する。
+デバッグインフォ.txt
 
 # アップロードされた画像ファイルをイグノアする
 /static/item_img/

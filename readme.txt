@@ -27,3 +27,9 @@ pathになるフォルダをpycharmのProject表示欄に右クリックして�
 6.debugモード切り替え
 デバッグモード：logistics/app.pyのapp.config['DEBUG']をTrueに設定する
 実行モード：logistics/app.pyのapp.config['DEBUG']をFalseに設定する
+
+7.app設定
+ICONITアプリをダウンロードして、
+設定の「アカウント」の「アプリ設定」の「商品検索」
+その中に、倉庫管理用の商品追加のURLを追加する。
+

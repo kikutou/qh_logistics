@@ -654,7 +654,7 @@ def itemAdd():
                     data['jan_code'] = jancode
                     data['no_code_flag'] = 1
                 else:
-                    data['jan_code'] = jancode;
+                    data['jan_code'] = jancode
 
                 result = Item(app).addItem(data)
                 if not result:
@@ -783,6 +783,14 @@ def itemAdd():
                     'memo': memo
                 }
             except:
+
+                item = {
+                    'jan_code': jancode,
+                    'jp_name': "",
+                    'unit_price': "",
+                    'memo': ""
+                }
+
                 error = "找不到该商品信息"
 
         if (item == 0 or (item and ( item['jp_name'] == None or item['unit_price'] == None ))):
